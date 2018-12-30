@@ -19,6 +19,14 @@ export default {
 </script>
 
 <style>
+div.detailDialog .el-dialog__body {
+  padding: 0px;
+}
+
+div.detailDialog .el-dialog__header {
+  padding: 0px;
+}
+
 svg {
  top:0;
  width:100%;

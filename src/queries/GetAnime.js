@@ -4,9 +4,23 @@ query ($animeId: Int!)
     Media(id: $animeId) {
       id
       episodes
+      status
+      description(asHtml: false)
+      siteUrl
+      stats {
+        scoreDistribution {
+          score
+          amount
+        }
+        statusDistribution {
+          status
+          amount
+        }
+      }
       title {
         userPreferred
       }
+      bannerImage
       coverImage {
         large
       }
@@ -18,9 +32,23 @@ query ($animeId: Int!)
           Media: node {
             id
             episodes
+            status
+            description(asHtml: true)
+            siteUrl
+            stats {
+              scoreDistribution {
+                score
+                amount
+              }
+              statusDistribution {
+                status
+                amount
+              }
+            }
             title {
               userPreferred
             }
+            bannerImage
             coverImage {
               large
             }

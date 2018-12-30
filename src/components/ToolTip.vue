@@ -1,6 +1,8 @@
 <template>
   <el-card class="box-card">
-    {{ anime.Media.title.userPreferred }}
+    <div>
+      {{ anime.Media.title.userPreferred }}
+    </div>
 </el-card>
 </template>
 
