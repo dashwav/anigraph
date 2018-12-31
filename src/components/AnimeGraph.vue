@@ -399,6 +399,7 @@ function removeClass(className) {
 
 <style scoped>
 .graphDiv {
+  width: 100%;
   height:100%;
 }
 svg {

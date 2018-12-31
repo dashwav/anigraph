@@ -3,10 +3,13 @@ query ($animeId: Int!)
   {
     Media(id: $animeId) {
       id
+      format
       episodes
       status
       description(asHtml: false)
       siteUrl
+      averageScore
+      popularity
       stats {
         scoreDistribution {
           score
@@ -23,6 +26,8 @@ query ($animeId: Int!)
       bannerImage
       coverImage {
         large
+        medium
+        color
       }
       genres
       relations {
@@ -31,10 +36,13 @@ query ($animeId: Int!)
           relationType
           Media: node {
             id
+            format
             episodes
             status
             description(asHtml: true)
             siteUrl
+            averageScore
+            popularity
             stats {
               scoreDistribution {
                 score
@@ -51,6 +59,8 @@ query ($animeId: Int!)
             bannerImage
             coverImage {
               large
+              medium
+              color
             }
             genres
             relations {
