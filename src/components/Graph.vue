@@ -1,5 +1,14 @@
 <template>
   <div class="listGraphs">
+    <div class="userSummary">
+      <el-container>
+        <el-header>Header</el-header> 
+        <el-container>
+          <el-aside width="200px"></el-aside>
+          <el-main>Main</el-main>
+        </el-container>
+    </el-container>
+    </div>
     <el-collapse>
       <ListEntry 
         v-for="(entry, index) in list"

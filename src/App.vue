@@ -1,9 +1,22 @@
 <template>
   <div id="app">
-    <el-header></el-header>
+    <el-header id='mainHeader'>
+      <div class='stuffContainer'>
+        <div id='homeTitle'>
+          <router-link to='/' class='headerLink'>AniGraph</router-link>
+        </div>
+        <div id='userDiv'>
+          <a v-if='!this.$store.state.access_token' class='headerLink' href='https://anilist.co/api/v2/oauth/authorize?client_id=1446&response_type=token'>Login</a>
+          <a v-else class='headerLink'>{{ this.$store.state.user_details.username}}</a>
+        </div>
+      </div>
+    </el-header>
     <el-container id="body">
       <router-view></router-view>
     </el-container>
+    <!-- <div id='about'>
+      <router-link class='aboutLink' to='/about'>about</router-link>
+    </div> -->
   </div>
 </template>
 
@@ -19,6 +32,33 @@ export default {
 </script>
 
 <style>
+#userDiv {
+  justify-self: flex-end;
+}
+
+#about {
+  z-index: 1000;
+  background-color: rgba(0,0,0,0);
+}
+
+.stuffContainer {
+  width: 60%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerLink {
+  text-decoration: none;
+  color: white;
+}
+
+.aboutLink {
+  text-decoration: none;
+  color: black;
+}
+
 div.detailDialog .el-dialog__body {
   padding: 0px;
 }
@@ -41,7 +81,9 @@ svg {
   align-content: center;
 }
 
-.el-header {
+.el-header#mainHeader {
+  display: flex;
+  justify-content: center;
   height: 10%;
   background-color: #1f2631
 }
