@@ -20,7 +20,7 @@ const store = new Vuex.Store({
         username: null,
         user_id: null,
         avatar_url: null,
-        list_type: null
+        lists: null
       }
     };
   },
@@ -31,10 +31,10 @@ const store = new Vuex.Store({
       state.expires_in = '';
     },
     add_user_details(state, userDetails) {
-      state.user_details.username =  userDetails.name;
-      state.user_details.user_id = userDetails.id;
-      state.user_details.avatar_url = userDetails.avatar.large;
-      state.user_details.list_type = userDetails.mediaListOptions.scoreFormat;
+      state.user_details.username =  userDetails.User.name;
+      state.user_details.user_id = userDetails.User.id;
+      state.user_details.avatar_url = userDetails.User.avatar.medium;
+      state.user_details.lists = userDetails.MediaListCollection.lists;
     },
     update_auth_tokens(state, tokenData) {
       localStorage.setItem("access_token", tokenData.access_token);

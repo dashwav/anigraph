@@ -10,6 +10,10 @@ query ($animeId: Int!)
       siteUrl
       averageScore
       popularity
+      mediaListEntry {
+        status
+        progress
+      }
       stats {
         scoreDistribution {
           score
@@ -43,6 +47,10 @@ query ($animeId: Int!)
             siteUrl
             averageScore
             popularity
+            mediaListEntry {
+              status
+              progress
+            }
             stats {
               scoreDistribution {
                 score

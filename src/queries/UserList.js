@@ -25,18 +25,6 @@ export const
               medium
             }
             genres
-            relations{
-              edges{
-                id
-                relationType
-                node {
-                  id
-                  title {
-                    userPreferred
-                  }
-                }
-              }
-            }
           }
           mediaId
           score
