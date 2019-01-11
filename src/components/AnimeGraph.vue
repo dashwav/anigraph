@@ -1,5 +1,12 @@
 <template>
   <div class="graphDiv">
+    <anime-user-popover 
+      v-if='this.$store.state.user_details.username'
+      id='userDetails'
+      :completed='this.completed_episodes'
+      :planning='this.planned_episodes'
+      :total='this.total_episodes'
+      ></anime-user-popover>
     <svg>
       <g ref='scene'>
         <g ref='linksContainer'>
@@ -12,12 +19,20 @@
         </g>
         <g ref='nodeContainer'>
           <circle v-for='node in nodes'
-          class='anime-thumbnail'
+          class='anime-thumbnail badge'
           :key='node.id'
           :data-id='node.id'
           stroke='black'
           stroke-width='1'
           cx="33" cy="33" r="33" :fill='"url(#image-" + node.id + ")"'
+          />
+          <circle  v-for='node in getListNodes(nodes)'
+          class='anime-thumbnail badge'
+          :key='node.id + "badge"'
+          :data-id='node.id + "badge"'
+          stroke='black'
+          stroke-width='1'
+          cx="8" cy="8" r="8" :fill='getColor(node.data.anime.Media)'
           />
           
         </g>
@@ -59,6 +74,7 @@ import { getFromTo } from '../lib/geom.js';
 import { GetAnime } from '../queries/GetAnime.js';
 import ToolTip from './ToolTip.vue';
 import AnimeDetails from './AnimeDetails.vue';
+import AnimeUserPopover from './AnimeUserPopover.vue';
 
 export default {
   name: 'AnimeGraph',
@@ -75,13 +91,25 @@ export default {
         text: '',
         x: 0,
         y: 0
+      },
+      completed_episodes: 0,
+      planned_episodes: 0,
+      total_episodes: 0,
+      color_map: {
+        'COMPLETED': '#00FF00',
+        'DROPPED': '#FF0000',
+        'PLANNING': '#FFFF00 ',
+        'PAUSED': '#FF6600',
+        'CURRENT': '#0000FF',
+        'REPEATING': '#0000FF',
       }
     };
   },
 
   components: {
     ToolTip,
-    AnimeDetails
+    AnimeDetails,
+    AnimeUserPopover
   },
 
   created() {
@@ -104,9 +132,23 @@ export default {
       this.dialog = false;
     },
 
+    getColor(item) {
+      console.log(item.mediaListEntry.status);
+      if (!item.mediaListEntry){
+        return '#000';
+      }
+      return this.color_map[item.mediaListEntry.status];
+
+    },
+
+    getListNodes(nodes)  {
+       return nodes.filter(node => node.data.anime.Media.mediaListEntry)
+    },
+
     handleMouseEnter(e) {
       const nodeId = getNodeIdFromDOM(e.target);
       if (!nodeId) return;
+      if (nodeId.includes('badge')) return;
 
       this.clearHighlight();
 
@@ -117,6 +159,8 @@ export default {
     },
 
     handleMouseClick(e) {
+      const nodeId = getNodeIdFromDOM(e.target);
+      if (nodeId.includes('badge')) return;
       this.dialog = !this.dialog
     },
 
@@ -249,6 +293,10 @@ export default {
         if (ui) {
           ui.setAttributeNS(null, 'transform', 'translate(' + (node.pos.x - 33) + ',' + (node.pos.y - 33) + ')');
         }
+        const badgeUi = this.$refs.nodeContainer.querySelector(`[data-id="${node.id}badge"]`);
+        if (badgeUi) {
+          badgeUi.setAttributeNS(null, 'transform', 'translate(' + (node.pos.x + 20) + ',' + (node.pos.y - 30) + ')');
+        }
       });
 
       this.iterations += 1;
@@ -274,7 +322,6 @@ export default {
       while (queue.length > 0) {
         // TODO: Add in amount of found nodes into loading indicator
         count++;
-        console.log('Nodes: ' + count);
 
         var currentNode = queue.pop();
         // Add a node for currently viewed node
@@ -302,6 +349,13 @@ export default {
             } else {
               newNode = edge;
             }
+            if (newNode.Media.mediaListEntry) {
+              this.completed_episodes += newNode.Media.mediaListEntry.progress;
+              if (newNode.Media.mediaListEntry.status == 'PLANNING') {
+                this.planned_episodes += newNode.Media.episodes - newNode.Media.mediaListEntry.progress;
+              }
+            }
+            this.total_episodes += newNode.Media.episodes;
             queue.unshift(newNode);
             visited.set(edge.Media.id, true);
           } else {
@@ -352,6 +406,9 @@ export default {
                     variables: variables
                 })
             };
+            if (this.$store.state.access_token) {
+              options.headers.Authorization = this.$store.state.access_token
+            }
         // Make the HTTP Api request
         const response = await fetch(url, options);
         const json = await this.handleResponse(response);
@@ -368,7 +425,6 @@ export default {
 
 function computeLinkPath(edge, fromHeight, toHeight) {
   const { from, to } = getFromTo(edge, fromHeight, toHeight);
-  console.log(fromHeight + ' ' + toHeight);
   let data = 'M';
 
   data += Math.round(from.x) + ',' + Math.round(from.y);
@@ -398,6 +454,30 @@ function removeClass(className) {
 </script>
 
 <style scoped>
+#userDetails {
+  margin: 10px;
+  z-index: 1000;
+  position:absolute;
+  left: 0;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.badge:after{
+    content:'3';
+    position: absolute;
+    background: rgba(0,0,255,1);
+    height:2rem;
+    top:1rem;
+    right:1.5rem;
+    width:2rem;
+    text-align: center;
+    line-height: 2rem;;
+    font-size: 1rem;
+    border-radius: 50%;
+    color:white;
+    border:1px solid blue;
+}
+
 .graphDiv {
   width: 100%;
   height:100%;

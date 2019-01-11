@@ -1,6 +1,6 @@
 <template>
   <el-card class="box-card">
-    <div class="animeDiv">
+    <div>
       {{ anime.Media.title.userPreferred }}
     </div>
 </el-card>
@@ -21,7 +21,4 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.animeDiv {
-    height: 500px;
-}
 </style>

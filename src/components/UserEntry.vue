@@ -26,6 +26,8 @@
 import { SearchQuery } from '../queries/SearchQuery.js'
 import { GetUser } from '../queries/GetUser.js'
 import querystring from 'querystring'
+import { UserList } from '../queries/UserList.js';
+import jwt_decode from 'jwt-decode';
 export default {
   name: 'UserEntry',
   props: {
@@ -43,18 +45,20 @@ export default {
   },
   mounted() {
     let hashValue = this.$route.hash;
-    this.$store.commit('logout');
+    // this.$store.commit('logout');
     if (!hashValue) {
-      console.log('halsdkf')
         return
     } else {
         try {
             let tokensString = hashValue.substring(1, hashValue.length); //remove the # in the string
             let parsedTokens = querystring.parse(tokensString);
-            console.log(parsedTokens);
             this.$store.commit("update_auth_tokens", parsedTokens);
             const auth = 'Bearer ' + this.$store.state.access_token;
-            const query = GetUser;
+            var query = UserList;
+            const token = jwt_decode(this.$store.state.access_token)
+            const variables = {
+              userId: token.sub
+            }
             var url = 'https://graphql.anilist.co',
             options = {
                 method: 'POST',
@@ -64,13 +68,14 @@ export default {
                     'Authorization': auth
                 },
                 body: JSON.stringify({
-                    query: query
+                    query: query,
+                    variables: variables
                 })
             };
             fetch(url, options).then(this.handleResponse)
                    .then((data) => {
-                     console.log(data);
-                    this.$store.commit('add_user_details', data.data.Viewer);
+                     console.log(data)
+                    this.$store.commit('add_user_details', data.data);
                    })
                    .catch((err) => {
                      console.log(err)
