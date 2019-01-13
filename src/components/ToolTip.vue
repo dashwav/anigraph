@@ -8,7 +8,7 @@
 
 <script>
 export default {
-  name: 'UserEntry',
+  name: 'ToolTip',
   props: {
       anime: Object,
   },

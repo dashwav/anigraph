@@ -41,15 +41,13 @@
 </template>
 
 <script>
-import UserEntry from './components/UserEntry.vue'
 
 export default {
   name: 'app',
   components: {
-    UserEntry
   },
   methods: {
-    handleCommand(command) {
+    handleCommand() {
       this.$store.commit('logout');
     }
   }

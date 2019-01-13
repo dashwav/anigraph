@@ -1,6 +1,6 @@
 <template>
   <el-dialog class='detailDialog'
-    :visible="centerDialogVisible"
+    :visible="isVisible"
     v-on:close='handleClose'
     >
     <div class="detailHeader"
@@ -90,10 +90,11 @@
 
 <script>
 export default {
-  name: 'UserEntry',
+  name: 'AnimeDetails',
   props: {
       anime: Object,
-      centerDialogVisible: false
+      // eslint-disable-next-line
+      isVisible: false
   },
   data() {
       return {

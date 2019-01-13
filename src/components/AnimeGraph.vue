@@ -71,7 +71,7 @@
     </div>
     <AnimeDetails v-if='tooltip.anime'
       :anime=tooltip.anime
-      :centerDialogVisible=dialog
+      :isVisible=dialog
       v-on:close='handleClose'></AnimeDetails>
   </div>
 </template>
@@ -244,10 +244,6 @@ export default {
     async handleMouseLeave() {
       this.clearHighlight();
       this.tooltip.visible = false;
-    },
-
-    sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
     },
 
     clearHighlight() {
@@ -513,17 +509,19 @@ export default {
         // Leaving the comments in cause they are useful
         // Here we define our query as a multi-line string
         // Storing it in a separate .graphql/.gql file is also possible
+        var query = null;
+        var variables = {};
         if (!remove) {
-          var query = AddToList;
+          query = AddToList;
           // Define our query variables and values that will be used in the query request
-          var variables = {
+          variables = {
               mediaId: id,
               status: 'PLANNING'
           };
         } else {
-          var query = RemoveFromList;
+          query = RemoveFromList;
           // Define our query variables and values that will be used in the query request
-          var variables = {
+          variables = {
               mediaId: id,
           };
         }

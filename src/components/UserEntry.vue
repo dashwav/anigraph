@@ -23,9 +23,8 @@
 </template>
 
 <script>
-import { SearchQuery } from '../queries/SearchQuery.js'
-import { GetUser } from '../queries/GetUser.js'
-import querystring from 'querystring'
+import { SearchQuery } from '../queries/SearchQuery.js';
+import querystring from 'querystring';
 import { UserList } from '../queries/UserList.js';
 import jwt_decode from 'jwt-decode';
 export default {
@@ -77,12 +76,8 @@ export default {
             };
             fetch(url, options).then(this.handleResponse)
                    .then((data) => {
-                     console.log(data)
                     this.$store.commit('add_user_details', data.data);
                    })
-                   .catch((err) => {
-                     console.log(err)
-                   });
 
             this.$store.state.loading = false;
             this.$router.push("/");
@@ -137,7 +132,6 @@ export default {
             "link": '/anime/' + entry.id + '/graph'
           }
         });
-        console.log(results);
         callback(results)
       },
       async handleResponse(response) {

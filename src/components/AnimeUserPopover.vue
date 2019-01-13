@@ -23,7 +23,7 @@
 
 <script>
 export default {
-  name: 'UserEntry',
+  name: 'AnimeUserPopover',
   props: {
     completed: Number,
     planning: Number,
