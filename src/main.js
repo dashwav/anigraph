@@ -36,6 +36,7 @@ const store = new Vuex.Store({
   },
   mutations: {
     logout(state) {
+      localStorage.clear();
       state.token_type = '';
       state.access_token = '';
       state.expires_in = '';
