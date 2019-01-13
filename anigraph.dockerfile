@@ -1,6 +1,10 @@
 # build stage
 FROM node:9.11.1-alpine as build-stage
 WORKDIR /app
+RUN apk add --no-cache --virtual .gyp \
+        python \
+        make \
+        g++
 COPY package*.json ./
 RUN npm install
 COPY . .
