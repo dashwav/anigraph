@@ -31,7 +31,7 @@
           stroke-width='1'
           cx="33" cy="33" r="33" :fill='"url(#image-" + node.id + ")"'
           />
-          <circle  v-for='node in nodes'
+          <circle  v-for='node in getNodeBadges(nodes)'
           class='anime-thumbnail badge'
           :key='node.id + "badge"'
           :data-id='node.id + "badge"'
@@ -39,7 +39,7 @@
           stroke-width='1'
           cx="7" cy="7" r="7" :fill='getColor(node.data.anime.Media)'
           />
-          <text v-for='node in nodes'
+          <text v-for='node in getNodeBadges(nodes)'
           class='anime-thumbnail badge'
           :key='node.id + "badge-icon"'
           :data-id='node.id + "badge-icon"'
@@ -161,13 +161,13 @@ export default {
 
     },
 
-    getListNodes(nodes)  {
-       return nodes.filter(node => node.data.anime.Media.mediaListEntry)
+    getNodeBadges(nodes)  {
+      if (!this.$store.state.access_token) {
+        return [];
+      }
+      return nodes;
     },
 
-    getNonListNodes(nodes)  {
-       return nodes.filter(node => !node.data.anime.Media.mediaListEntry)
-    },
 
     getNodeText(item) {
       if (!item.mediaListEntry) {
