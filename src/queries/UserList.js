@@ -1,7 +1,7 @@
 export const
   UserList = `
   query ($userId: Int!) {
-    User(id:99010) {
+    User(id: $userId) {
       id
       name
       avatar {
