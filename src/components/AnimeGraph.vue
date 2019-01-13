@@ -399,6 +399,7 @@ export default {
                 this.planned_episodes += currentNode.Media.episodes - currentNode.Media.mediaListEntry.progress;
               }
             }
+            this.total_episodes += currentNode.Media.episodes;
           init = true;
         } else {
           this.addAnimeNode(this.graph, currentNode, 'CONN');
