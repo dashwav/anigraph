@@ -11,6 +11,7 @@ query ($animeId: Int!)
       averageScore
       popularity
       mediaListEntry {
+        id
         status
         progress
       }
@@ -48,6 +49,7 @@ query ($animeId: Int!)
             averageScore
             popularity
             mediaListEntry {
+              id
               status
               progress
             }

@@ -12,7 +12,7 @@
                   v-model="anime"
                   :fetch-suggestions="search"
                   placeholder="Please Input"
-                  :debounce='1000'
+                  :debounce='300'
                   :trigger-on-focus="false"
                   @select='submit'
                 ></el-autocomplete>
@@ -35,7 +35,9 @@ export default {
   data() {
       return {
           anime: null,
-          searchResults: []
+          searchResults: [],
+          rateLimit: false,
+          rateLimitText: 'We have hit an anilist API rate-limit, search results may be slow'
       }
   },
   computed: {
@@ -49,6 +51,7 @@ export default {
     if (!hashValue) {
         return
     } else {
+        this.$store.state.loading = true;
         try {
             let tokensString = hashValue.substring(1, hashValue.length); //remove the # in the string
             let parsedTokens = querystring.parse(tokensString);
@@ -80,8 +83,12 @@ export default {
                    .catch((err) => {
                      console.log(err)
                    });
+
+            this.$store.state.loading = false;
             this.$router.push("/");
         } catch (e) {
+
+            this.$store.state.loading = false;
             this.$router.push("/");
         }
     }
@@ -111,9 +118,19 @@ export default {
                 })
             };
         // Make the HTTP Api request
+        if (this.$store.state.remaining_requests < 3) {
+          var ts = Math.round((new Date()).getTime() / 1000);
+          var refresh = this.$store.state.request_reset - ts;
+          this.$store.state.rate_limit = true;
+          this.$store.state.rate_limit_text = 'We have hit the Anilist API rate-limit, some search results may be delayed.'
+          while (refresh > 1){
+            await this.sleep(1);
+            refresh--;
+          }
+          this.rate_limit = false;
+        }
         const response = await fetch(url, options);
         const json = await this.handleResponse(response);
-        console.log(json);
         const results = json.data.AnimeSearch.media.map((entry) => {
           return {
             "value": entry.title.userPreferred,
@@ -124,11 +141,17 @@ export default {
         callback(results)
       },
       async handleResponse(response) {
+        this.$store.state.remaining_requests = response.headers.get('X-RateLimit-Remaining');
+        this.$store.state.request_reset = response.headers.get('X-RateLimit-Reset');
             return response.json().then(function (json) {
                 return response.ok ? json : Promise.reject(json);
             });
-      }
+      },
 
+      sleep(s) {
+        const ms = s * 1000;
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
   }
 }
 </script>

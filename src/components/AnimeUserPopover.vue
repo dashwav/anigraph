@@ -1,13 +1,21 @@
 <template>
   <el-card class="box-card">
     <div class="userInfo">
-      Anime Progress
+      Episodes Watched
       <el-progress
         class='progressBar'
         :text-inside="true"
-        :color='getColor()'
+        :color='getColor(Math.round(100 * (completed / total)))'
         :stroke-width="18"
         :percentage='Math.round(100 * (completed / total))'>
+      </el-progress>
+      Total Planned
+      <el-progress
+        class='progressBar'
+        :text-inside="true"
+        :color='getColor(Math.round(100 * ((completed + planning) / total)))'
+        :stroke-width="18"
+        :percentage='Math.round(100 * ((completed + planning) / total))'>
       </el-progress>
     </div>
 </el-card>
@@ -26,8 +34,7 @@ export default {
       }
   },
   methods: {
-    getColor() {
-      const percentage = Math.round(100 * (this.completed / this.total))
+    getColor(percentage) {
       if (percentage < 35) {
         return 'red'
       } else if (percentage < 75) {

@@ -1,0 +1,8 @@
+export const AddToList = `
+mutation ($mediaId: Int, $status: MediaListStatus) {
+  SaveMediaListEntry (mediaId: $mediaId, status: $status) {
+      id
+      status
+  }
+}
+`

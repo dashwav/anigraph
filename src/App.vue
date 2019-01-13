@@ -1,5 +1,7 @@
 <template>
-  <div id="app">
+  <div id="app"
+    v-loading="this.$store.state.loading"
+    element-loading-text="Logging you in...">
     <el-header id='mainHeader'>
       <div class='stuffContainer'>
         <div id='homeTitle'>
@@ -7,11 +9,29 @@
         </div>
         <div id='userDiv'>
           <a v-if='!this.$store.state.access_token' class='headerLink' href='https://anilist.co/api/v2/oauth/authorize?client_id=1446&response_type=token'>Login</a>
-          <a v-else class='headerLink'>{{ this.$store.state.user_details.username}}</a>
+          <div class='headerLink' v-else>
+            {{ this.$store.state.user_details.username}}
+          <el-dropdown trigger="click" @command="handleCommand">
+            <span class="el-dropdown-link">
+              <div class='headerLink'>
+              <a><i class="el-icon-arrow-down el-icon--right" style='padding-right: 8px; cursor: pointer;'></i></a>
+              </div>
+              
+            </span>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item>Logout</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
+          </div>
         </div>
       </div>
     </el-header>
     <el-container id="body">
+      <el-alert v-if='this.$store.state.rate_limit' id='rateLimitAlert'
+      :title='this.$store.state.rate_limit_text'
+      type="warning"
+      :closable="false">
+      </el-alert>
       <router-view></router-view>
     </el-container>
     <!-- <div id='about'>
@@ -27,12 +47,37 @@ export default {
   name: 'app',
   components: {
     UserEntry
+  },
+  methods: {
+    handleCommand(command) {
+      this.$store.commit('logout');
+    }
   }
 }
 </script>
 
 <style>
+
+#rateLimitAlert {
+  position:absolute;
+  z-index: 9999;
+  align-self: flex-start;
+  height: 10%;
+  margin: 10px;
+  z-index: 9999;
+  width: 20%;
+}
+
+.graphDiv .el-loading-spinner .el-icon-loading {
+  color: #FFF;
+}
+
+.graphDiv .el-loading-spinner .el-loading-text {
+  color: #FFF;
+}
+
 #userDiv {
+  padding-left: 8px;
   justify-self: flex-end;
 }
 
@@ -74,7 +119,8 @@ svg {
 }
 
 #body {
-  height: 90%;
+  height: 93%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;

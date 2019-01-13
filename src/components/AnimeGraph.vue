@@ -1,7 +1,12 @@
 <template>
-  <div class="graphDiv">
+  <div class="graphDiv"
+    v-loading="loading"
+    :element-loading-text="loading_text"
+    element-loading-spinner="el-icon-loading"
+    element-loading-background="rgba(0, 0, 0, 0.8)">
+    <img class='el-icon-circle-check'/>
     <anime-user-popover 
-      v-if='this.$store.state.user_details.username'
+      v-if='this.$store.state.user_details.username && !loading'
       id='userDetails'
       :completed='this.completed_episodes'
       :planning='this.planned_episodes'
@@ -26,14 +31,20 @@
           stroke-width='1'
           cx="33" cy="33" r="33" :fill='"url(#image-" + node.id + ")"'
           />
-          <circle  v-for='node in getListNodes(nodes)'
+          <circle  v-for='node in nodes'
           class='anime-thumbnail badge'
           :key='node.id + "badge"'
           :data-id='node.id + "badge"'
-          stroke='black'
+          stroke='#424242'
           stroke-width='1'
-          cx="8" cy="8" r="8" :fill='getColor(node.data.anime.Media)'
+          cx="7" cy="7" r="7" :fill='getColor(node.data.anime.Media)'
           />
+          <text v-for='node in nodes'
+          class='anime-thumbnail badge'
+          :key='node.id + "badge-icon"'
+          :data-id='node.id + "badge-icon"'
+          fill='#424242'
+          v-html='getNodeText(node.data.anime.Media)'></text>
           
         </g>
       </g>
@@ -58,11 +69,10 @@
       }'>
       <ToolTip  :anime=tooltip.anime ></ToolTip>
     </div>
-    <AnimeDetails
+    <AnimeDetails v-if='tooltip.anime'
       :anime=tooltip.anime
       :centerDialogVisible=dialog
       v-on:close='handleClose'></AnimeDetails>
-    
   </div>
 </template>
 
@@ -72,6 +82,8 @@ import createLayout from 'ngraph.forcelayout';
 import createGraph from 'ngraph.graph';
 import { getFromTo } from '../lib/geom.js';
 import { GetAnime } from '../queries/GetAnime.js';
+import {AddToList} from '../queries/AddToList.js';
+import { RemoveFromList} from '../queries/RemoveFromList.js';
 import ToolTip from './ToolTip.vue';
 import AnimeDetails from './AnimeDetails.vue';
 import AnimeUserPopover from './AnimeUserPopover.vue';
@@ -81,6 +93,7 @@ export default {
   props: ['anime'],
   data() {
     return {
+      // Graph
       nodes: [],
       edges: [],
       graph: null,
@@ -92,16 +105,23 @@ export default {
         x: 0,
         y: 0
       },
+      // Utility
+      loading: true,
+      loading_text: 'Loading',
+      nodeCount: 0,
+      rateLimit: false,
+      rateLimitText: 'We have hit the Anilist API rate-limit, waiting ',
+      // Anime Stats
       completed_episodes: 0,
       planned_episodes: 0,
       total_episodes: 0,
       color_map: {
-        'COMPLETED': '#00FF00',
-        'DROPPED': '#FF0000',
-        'PLANNING': '#FFFF00 ',
-        'PAUSED': '#FF6600',
-        'CURRENT': '#0000FF',
-        'REPEATING': '#0000FF',
+        'COMPLETED': '#00b159',
+        'DROPPED': '#d11141',
+        'PLANNING': '#ffc425',
+        'PAUSED': '#f37735',
+        'CURRENT': '#00aedb',
+        'REPEATING': '#00b159',
       }
     };
   },
@@ -117,6 +137,7 @@ export default {
   },
 
   mounted() {
+    this.loading_text = 'Loading nodes: ' + this.nodeCount + ' found...';
     const { scene } = this.$refs;
     this.zoomHandle = panZoom(scene, {
       zoomDoubleClickSpeed: 1, 
@@ -133,9 +154,8 @@ export default {
     },
 
     getColor(item) {
-      console.log(item.mediaListEntry.status);
       if (!item.mediaListEntry){
-        return '#000';
+        return 'rgba(180, 180, 180,0.9)';
       }
       return this.color_map[item.mediaListEntry.status];
 
@@ -143,6 +163,19 @@ export default {
 
     getListNodes(nodes)  {
        return nodes.filter(node => node.data.anime.Media.mediaListEntry)
+    },
+
+    getNonListNodes(nodes)  {
+       return nodes.filter(node => !node.data.anime.Media.mediaListEntry)
+    },
+
+    getNodeText(item) {
+      if (!item.mediaListEntry) {
+        return "&#xf067;";
+      }
+      if (item.mediaListEntry.status == "PLANNING"){
+        return "&#xf068;";
+      }
     },
 
     handleMouseEnter(e) {
@@ -158,8 +191,43 @@ export default {
       this.showTooltip(e.target, anime);
     },
 
-    handleMouseClick(e) {
+    async handleMouseClick(e) {
       const nodeId = getNodeIdFromDOM(e.target);
+      if (nodeId.includes('badge-icon')) {
+        var node = this.graph.getNode(nodeId.replace('badge-icon', ''));
+        if (!node.data.anime.Media.mediaListEntry) {
+          await this.addAnime(node.data.anime.Media.id, false);
+          const updated = await this.fetchAnime(node.data.anime.Media.id);
+          this.planned_episodes += updated.Media.episodes
+          this.graph.addNode(
+            nodeId.replace('badge-icon', ''),
+            {
+              width: 33,
+              height: 33,
+              anime: updated,
+              type: ''
+            }
+          )
+          this.initializeGraph(this.graph)
+          return
+        } else {
+          await this.addAnime(node.data.anime.Media.mediaListEntry.id, true);
+          const updated = await this.fetchAnime(node.data.anime.Media.id);
+          this.planned_episodes -= updated.Media.episodes
+          this.graph.addNode(
+            nodeId.replace('badge-icon', ''),
+            {
+              width: 33,
+              height: 33,
+              anime: updated,
+              type: ''
+            }
+          )
+          this.initializeGraph(this.graph)
+          return
+        }
+
+      }
       if (nodeId.includes('badge')) return;
       this.dialog = !this.dialog
     },
@@ -251,7 +319,7 @@ export default {
         springCoeff: 0.0004,
         dragCoeff: 0.05,
         gravity: -50,
-        theta: 0.5
+        theta: 0.8
       });
 
       this.nodes = [];
@@ -297,6 +365,10 @@ export default {
         if (badgeUi) {
           badgeUi.setAttributeNS(null, 'transform', 'translate(' + (node.pos.x + 20) + ',' + (node.pos.y - 30) + ')');
         }
+        const badgeUI_icon = this.$refs.nodeContainer.querySelector(`[data-id="${node.id}badge-icon"]`);
+        if (badgeUI_icon) {
+          badgeUI_icon.setAttributeNS(null, 'transform', 'translate(' + (node.pos.x + 22.5) + ',' + (node.pos.y - 18.5) + ')');
+        }
       });
 
       this.iterations += 1;
@@ -318,31 +390,40 @@ export default {
       queue.unshift(baseAnime);
       visited.set(baseAnime.Media.id, true);
 
-      var count = 0;
       while (queue.length > 0) {
-        // TODO: Add in amount of found nodes into loading indicator
-        count++;
+        this.nodeCount++;
 
         var currentNode = queue.pop();
         // Add a node for currently viewed node
         if (!init){
           this.addAnimeNode(this.graph, currentNode, 'BASE');
+          if (currentNode.Media.mediaListEntry) {
+              this.completed_episodes += currentNode.Media.mediaListEntry.progress;
+              if (currentNode.Media.mediaListEntry.status == 'PLANNING') {
+                this.planned_episodes += currentNode.Media.episodes - currentNode.Media.mediaListEntry.progress;
+              }
+            }
           init = true;
         } else {
           this.addAnimeNode(this.graph, currentNode, 'CONN');
         }
 
         const promises = currentNode.Media.relations.edges.map(async function(edge) {
+          this.loading_text = 'Loading nodes: ' + this.nodeCount + ' found...';
           if (edge.relationType === 'ADAPTATION') {
             // Don't need source material/adaptations
             return
           }
+          if (edge.relationType === 'OTHER') {
+            const foundNode = this.graph.getNode(edge.Media.id);
+            // Don't need source material/adaptations
+            if (foundNode) {
+              this.graph.addLink(foundNode.data.anime.Media.id, currentNode.Media.id);
+            }
+            return
+          }
           if (!visited.get(edge.Media.id)) {
             // If this is a new node
-            // TODO: Rate limit
-            // RE: Rate Limit - Add a few layers deep to GetAnime,
-            // ... and if there are edges deeper than that with relations, 
-            // ... get those manually if edge.Media.X doesn't exist
             var newNode = null;
             if (!edge.Media.title){
                 newNode = await this.fetchAnime(edge.Media.id);
@@ -368,6 +449,7 @@ export default {
         }, this);
         await Promise.all(promises);
       }
+      this.loading = false;
       this.initializeGraph(this.graph)
     },
 
@@ -382,8 +464,6 @@ export default {
       },
     
     async fetchAnime(id) {
-        this.requests++;
-        console.log('Request #: ' + this.requests);
         // Definitely just stole this from the anilist API example
         // Leaving the comments in cause they are useful
         // Here we define our query as a multi-line string
@@ -409,16 +489,92 @@ export default {
             if (this.$store.state.access_token) {
               options.headers.Authorization = this.$store.state.access_token
             }
+        if (this.$store.state.remaining_requests < 3) {
+          var ts = Math.round((new Date()).getTime() / 1000);
+          var refresh = this.$store.state.request_reset - ts;
+          this.$store.state.rate_limit = true;
+          this.$store.state.rate_limit_text = 'We have hit the Anilist API rate-limit, waiting ' + refresh + ' seconds to continue'
+          while (refresh > 1){
+            this.$store.state.rate_limit_text = 'We have hit the Anilist API rate-limit, waiting ' + refresh + ' seconds to continue'
+            await this.sleep(1);
+            refresh--;
+          }
+          this.$store.state.rate_limit = false;
+        }
         // Make the HTTP Api request
         const response = await fetch(url, options);
         const json = await this.handleResponse(response);
         return json.data;
       },
+
+      async addAnime(id, remove) {
+        this.requests++;
+        // Definitely just stole this from the anilist API example
+        // Leaving the comments in cause they are useful
+        // Here we define our query as a multi-line string
+        // Storing it in a separate .graphql/.gql file is also possible
+        if (!remove) {
+          var query = AddToList;
+          // Define our query variables and values that will be used in the query request
+          var variables = {
+              mediaId: id,
+              status: 'PLANNING'
+          };
+        } else {
+          var query = RemoveFromList;
+          // Define our query variables and values that will be used in the query request
+          var variables = {
+              mediaId: id,
+          };
+        }
+        
+        // Define the config we'll need for our Api request
+        var url = 'https://graphql.anilist.co',
+            options = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': this.$store.state.access_token
+                },
+                body: JSON.stringify({
+                    query: query,
+                    variables: variables
+                })
+            };
+            if (this.$store.state.access_token) {
+              options.headers.Authorization = this.$store.state.access_token
+            }
+        // Make the HTTP Api request
+        if (this.$store.state.remaining_requests < 3) {
+          var ts = Math.round((new Date()).getTime() / 1000);
+          var refresh = this.$store.state.request_reset - ts;
+          this.$store.state.rate_limit = true;
+          this.$store.state.rate_limit_text = 'We have hit the Anilist API rate-limit, waiting ' + refresh + ' seconds to continue'
+          while (refresh > 1){
+            this.$store.state.rate_limit_text = 'We have hit the Anilist API rate-limit, waiting ' + refresh + ' seconds to continue'
+            await this.sleep(1);
+            refresh--;
+          }
+          this.$store.state.rate_limit = false;
+        }
+        const response = await fetch(url, options);
+        const json = await this.handleResponse(response);
+        return json.data;
+      },
+
       async handleResponse(response) {
+        this.$store.state.remaining_requests = response.headers.get('X-RateLimit-Remaining');
+        this.$store.state.request_reset = response.headers.get('X-RateLimit-Reset');
             return response.json().then(function (json) {
                 return response.ok ? json : Promise.reject(json);
             });
       },
+
+      sleep(s) {
+        const ms = s * 1000;
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
   },
   
 };
@@ -454,28 +610,31 @@ function removeClass(className) {
 </script>
 
 <style scoped>
-#userDetails {
-  margin: 10px;
-  z-index: 1000;
-  position:absolute;
-  left: 0;
-  background: rgba(255, 255, 255, 0.6);
+@font-face {
+    font-family: "FontAwesome";
+    font-weight: normal;
+    font-style : normal;
+           src : url("http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.eot?v=4.3.0");
+           src : url("http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.eot?#iefix&v=4.3.0") format("embedded-opentype"),
+                 url("http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.woff2?v=4.3.0") format("woff2"),
+                 url("http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.woff?v=4.3.0") format("woff"),
+                 url("http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.ttf?v=4.3.0") format("truetype"),
+                 url("http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.svg?v=4.3.0#fontawesomelight") format("svg");
 }
 
-.badge:after{
-    content:'3';
-    position: absolute;
-    background: rgba(0,0,255,1);
-    height:2rem;
-    top:1rem;
-    right:1.5rem;
-    width:2rem;
-    text-align: center;
-    line-height: 2rem;;
-    font-size: 1rem;
-    border-radius: 50%;
-    color:white;
-    border:1px solid blue;
+.rateLimitAlert {
+  margin: 10px;
+  z-index: 9999;
+  width: 20%;
+}
+
+#userDetails {
+  margin: -10px 10px;
+  z-index: 1000;
+  position:absolute;
+  left: 0px;
+  top: 10%;
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .graphDiv {
@@ -485,6 +644,11 @@ function removeClass(className) {
 svg {
   width: 100%;
   height: 100%;
+}
+
+svg text {
+  font-size: .7em;
+  font-family: "FontAwesome"
 }
 path.hl {
   stroke: RGB(51, 182, 121);

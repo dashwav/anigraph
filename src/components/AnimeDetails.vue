@@ -85,25 +85,7 @@
         </div>
       </div>
     </div>
-
   </el-dialog>
-  <!-- <modal name="animeDetails">
-    <el-card class="box-card detailCard">
-      <div
-      slot="header" 
-      class="detailHeader"
-      :style='{
-        backgroundImage: "url(" + anime.Media.bannerImage + ")",
-      }'>
-      <div class="detailTitle">
-        {{ anime.Media.title.userPreferred }}
-        </div>
-      </div>
-      <div class="detailBody">
-
-      </div>
-    </el-card>
-  </modal> -->
 </template>
 
 <script>
