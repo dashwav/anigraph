@@ -127,7 +127,7 @@ svg {
 }
 
 #body {
-  height: 93%;
+  height: calc(100vh - 60px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
