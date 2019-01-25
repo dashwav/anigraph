@@ -139,13 +139,10 @@ export default {
   mounted() {
     this.loading_text = 'Loading nodes: ' + this.nodeCount + ' found...';
     const { scene } = this.$refs;
-    this.zoomHandle = panZoom(scene, {
-      zoomDoubleClickSpeed: 1, 
-    });
+    this.zoomHandle = panZoom(scene);
     const rect = this.$el.getBoundingClientRect();
     this.zoomHandle.moveTo(rect.width / 2, rect.height / 2);
     this.initEvents(scene);
-    
   },
 
   methods: {
@@ -304,7 +301,7 @@ export default {
     initEvents(scene) {
       scene.addEventListener('mouseenter', this.handleMouseEnter.bind(this), true);
       scene.addEventListener('mouseleave', this.handleMouseLeave.bind(this), true);
-      scene.addEventListener('mousedown', this.handleMouseClick.bind(this), true);
+      scene.addEventListener('mouseup', this.handleMouseClick.bind(this), true);
     },
 
     initializeGraph(newGraph) {
