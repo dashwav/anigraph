@@ -6,18 +6,7 @@
             </p>
         </div>
         <div id='infoSearch' >
-            <form id='searchContent'>
-                <el-autocomplete
-                  class="inline-input"
-                  v-model="anime"
-                  :fetch-suggestions="search"
-                  placeholder="Please Input"
-                  :debounce='300'
-                  :trigger-on-focus="false"
-                  @select='submit'
-                ></el-autocomplete>
-                <!-- <el-button type="primary" icon="el-icon-search" @click.stop.prevent="submit()">Submit</el-button> -->
-            </form>
+            <SearchBar id='searchContent'/>
         </div>
     </div>
 </template>
@@ -26,10 +15,14 @@
 import { SearchQuery } from '../queries/SearchQuery.js';
 import querystring from 'querystring';
 import { UserList } from '../queries/UserList.js';
+import SearchBar from './SearchBar.vue';
 import jwt_decode from 'jwt-decode';
 export default {
   name: 'UserEntry',
   props: {
+  },
+  components: {
+    SearchBar,
   },
   data() {
       return {
@@ -89,51 +82,6 @@ export default {
     }
   },
   methods: {
-      submit(selected) {
-        this.$router.push(selected.link);
-      },
-
-      async search(string, callback) {
-        var query = SearchQuery;
-        // Define our query variables and values that will be used in the query request
-        var variables = {
-            query: string
-        };
-        // Define the config we'll need for our Api request
-        var url = 'https://graphql.anilist.co',
-            options = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    query: query,
-                    variables: variables
-                })
-            };
-        // Make the HTTP Api request
-        if (this.$store.state.remaining_requests < 3) {
-          var ts = Math.round((new Date()).getTime() / 1000);
-          var refresh = this.$store.state.request_reset - ts;
-          this.$store.state.rate_limit = true;
-          this.$store.state.rate_limit_text = 'We have hit the Anilist API rate-limit, some search results may be delayed.'
-          while (refresh > 1){
-            await this.sleep(1);
-            refresh--;
-          }
-          this.rate_limit = false;
-        }
-        const response = await fetch(url, options);
-        const json = await this.handleResponse(response);
-        const results = json.data.AnimeSearch.media.map((entry) => {
-          return {
-            "value": entry.title.userPreferred,
-            "link": '/anime/' + entry.id + '/graph'
-          }
-        });
-        callback(results)
-      },
       async handleResponse(response) {
         this.$store.state.remaining_requests = response.headers.get('X-RateLimit-Remaining');
         this.$store.state.request_reset = response.headers.get('X-RateLimit-Reset');
@@ -152,7 +100,7 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.el-autocomplete {
+#searchContent {
   width: 100%;
 }
 

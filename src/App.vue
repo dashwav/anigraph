@@ -7,7 +7,9 @@
         <div id='homeTitle'>
           <router-link to='/' class='headerLink'>AniGraph</router-link>
         </div>
+        
         <div id='userDiv'>
+          <SearchBar id="searchBar" v-show='!["home"].includes($route.name)'/>
           <a v-if='!this.$store.state.access_token' class='headerLink' href='https://anilist.co/api/v2/oauth/authorize?client_id=1446&response_type=token'>Login</a>
           <div class='headerLink' v-else>
             {{ this.$store.state.user_details.username}}
@@ -16,7 +18,6 @@
               <div class='headerLink'>
               <a><i class="el-icon-arrow-down el-icon--right" style='padding-right: 8px; cursor: pointer;'></i></a>
               </div>
-              
             </span>
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item>Logout</el-dropdown-item>
@@ -41,10 +42,11 @@
 </template>
 
 <script>
-
+import SearchBar from './components/SearchBar.vue';
 export default {
   name: 'app',
   components: {
+    SearchBar
   },
   methods: {
     handleCommand() {
@@ -75,8 +77,16 @@ export default {
 }
 
 #userDiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
   padding-left: 8px;
   justify-self: flex-end;
+}
+
+#searchBar {
+  margin: 15px;
 }
 
 #about {
@@ -85,7 +95,7 @@ export default {
 }
 
 .stuffContainer {
-  width: 60%;
+  width: 70%;
   height: 100%;
   display: flex;
   align-items: center;
